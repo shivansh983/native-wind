@@ -34,7 +34,8 @@
         }
       ],
       "@clerk/expo",
-      "expo-secure-store"
+      "expo-secure-store",
+      "@clerk/expo-native-components"
     ],
     "experiments": {
       "typedRoutes": true,
