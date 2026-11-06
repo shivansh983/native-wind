@@ -15,6 +15,45 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    ```bash
    npx expo start
    ```
+(The application is build using pluggins and native-wind so expo-go wont work)
+
+3. Provide the Clerk key
+
+```Create a .env file as the application need   Clerk_Key
+
+```
+
+4. Generate the native project
+
+```
+npx expo prebuild  --platform android
+(only rerun this if changed any pluggins)
+
+```
+
+
+5. build the app using EAS
+```
+  a. debug-build(JS server live by metro):
+   cd android
+   ./gradlew assembleDebug
+
+
+  b.release-build  (JS bundled)
+   cd android
+   ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a
+
+```
+
+6. install the apk on your device
+```
+   adb devices                                       # to check available devices
+
+   adb install -r android/app/build/outputs/apk/release/app-release.apk
+```
+
+
+
 
 In the output, you'll find options to open the app in a
 
