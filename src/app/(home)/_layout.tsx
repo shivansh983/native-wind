@@ -26,6 +26,11 @@ const HomeTabsLayout = () => {
         <NativeTabs.Trigger.Icon sf="doc.text.fill" md="description" />
         <NativeTabs.Trigger.Label>Files</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="config">
+        <NativeTabs.Trigger.Icon sf="gearshape.fill" md="settings" />
+        <NativeTabs.Trigger.Label>Config</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
     </NativeTabs>
   );
 };

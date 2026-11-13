@@ -9,14 +9,7 @@ const RootLayout = () => {
     loadApiUrl();
   }, []);
 
-  return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen
-        name="server"
-        options={{ presentation: 'modal', headerShown: true, title: 'Server' }}
-      />
-    </Stack>
-  );
+  return <Stack screenOptions={{ headerShown: false }} />;
 };
 
 export default RootLayout;

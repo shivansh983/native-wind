@@ -1,21 +1,23 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Text, TextInput, View } from 'react-native';
-import { getApiUrl, getDefaultApiUrl, setApiUrl } from '../api/config';
-import CustomButton from '../component/button';
-import { useAppStore } from '../store/useStore';
-import { COLORS } from '../theme/colors';
+import { getApiUrl, getDefaultApiUrl, setApiUrl } from '../../api/config';
+import CustomButton from '../../component/button';
+import CustomScreen from '../../component/screen';
+import { useAppStore } from '../../store/useStore';
+import { COLORS } from '../../theme/colors';
 
 const clean = (value: string) => value.trim().replace(/\/+$/, '');
 
 // http://host:port
 const looksValid = (value: string) => /^https?:\/\/[^\s/]+/i.test(value);
 
-const ServerScreen = () => {
+const ConfigScreen = () => {
+  const triggerUpload = useAppStore((state) => state.triggerUpload);
+  const { then } = useLocalSearchParams<{ then?: string }>();
+
   const [url, setUrl] = useState(getApiUrl());
   const [busy, setBusy] = useState(false);
-  const router = useRouter();
-  const { then } = useLocalSearchParams<{ then?: string }>();
 
   // ping it
   const ping = async (value: string) => {
@@ -63,29 +65,29 @@ const ServerScreen = () => {
     setUrl(value);
     setBusy(false);
 
-    if (ok) {
-      Alert.alert('Connected', 'Saved.', [
-        {
-          text: 'OK',
-          onPress: () => {
-            router.back();
-            // carry on with the upload
-            if (then === 'upload') {
-              setTimeout(() => useAppStore.getState().triggerUpload(), 300);
-            }
-          },
-        },
-      ]);
-    } else {
+    if (!ok) {
       Alert.alert(
         'Saved, but no answer',
         'The address is stored but nothing replied. Uploads will fail until the server is reachable.',
       );
+      return;
     }
+
+    Alert.alert('Connected', 'Saved.', [
+      {
+        text: 'OK',
+        // carry on with the upload
+        onPress: () => {
+          if (then === 'upload') {
+            setTimeout(triggerUpload, 300);
+          }
+        },
+      },
+    ]);
   };
 
   return (
-    <View className="flex-1 bg-background p-4">
+    <CustomScreen title="Config" onUpload={triggerUpload}>
       <View className="rounded-2xl border border-border bg-surface p-4">
         <Text className="font-semibold text-main">Server address</Text>
         <Text className="mb-3 mt-1 text-xs text-muted">
@@ -119,11 +121,11 @@ const ServerScreen = () => {
       </View>
 
       <Text className="mt-3 text-xs text-muted">
-        Find it with ipconfig on Windows, or ip addr on Mac and Linux. The phone
-        must be on the same Wi-Fi.
+        Running the backend in Docker: Use the device IP and the Host port,
+        like http://192.168.1.50:HOST_PORT
       </Text>
-    </View>
+    </CustomScreen>
   );
 };
 
-export default ServerScreen;
+export default ConfigScreen;

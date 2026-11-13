@@ -13,7 +13,7 @@ const TopHeader = ({ screenTitle, onUpload }: TopHeaderProps) => {
   const isUploading = useAppStore((state) => state.isUploading);
   const router = useRouter();
 
-  // no server yet -> server screen
+  // no server yet -> config tab
   const handleUpload = () => {
     if (!hasApiUrl()) {
       Alert.alert(
@@ -21,7 +21,7 @@ const TopHeader = ({ screenTitle, onUpload }: TopHeaderProps) => {
         'the backend is configured for Docker, Enter your device IP with PORT and press save.',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Enter IP', onPress: () => router.push('/server?then=upload') },
+          { text: 'Enter IP', onPress: () => router.push('/config?then=upload') },
         ],
       );
       return;
