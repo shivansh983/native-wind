@@ -4,7 +4,7 @@ import { loadApiUrl } from '../api/config';
 import '../global.css';
 
 const RootLayout = () => {
-  // restore the saved server address
+  // load saved server
   useEffect(() => {
     loadApiUrl();
   }, []);

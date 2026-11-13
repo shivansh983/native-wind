@@ -22,7 +22,7 @@ const openFile = async (item: FileItem) => {
       );
     }
 
-    const opts = { mimeType: 'application/pdf', title: item.name };
+    const opts = { mimeType: item.mimeType, title: item.name };
 
     if (!(await File.canPreview(file, opts))) {
       Alert.alert('Cannot open', 'No app installed for this file type.');

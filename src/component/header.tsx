@@ -1,4 +1,6 @@
-import { Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Alert, Text, View } from 'react-native';
+import { hasApiUrl } from '../api/config';
 import { useAppStore } from '../store/useStore';
 import CustomButton from './button';
 
@@ -9,6 +11,24 @@ interface TopHeaderProps {
 
 const TopHeader = ({ screenTitle, onUpload }: TopHeaderProps) => {
   const isUploading = useAppStore((state) => state.isUploading);
+  const router = useRouter();
+
+  // no server yet -> server screen
+  const handleUpload = () => {
+    if (!hasApiUrl()) {
+      Alert.alert(
+        'Server not set',
+        'the backend is configured for Docker, Enter your device IP with PORT and press save.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Enter IP', onPress: () => router.push('/server?then=upload') },
+        ],
+      );
+      return;
+    }
+
+    onUpload?.();
+  };
 
   return (
     <View className="flex-row items-center justify-between bg-navy px-4 pb-4 pt-2">
@@ -23,7 +43,7 @@ const TopHeader = ({ screenTitle, onUpload }: TopHeaderProps) => {
 
       <CustomButton
         title={isUploading ? 'Uploading...' : 'Upload'}
-        onPress={onUpload}
+        onPress={handleUpload}
         disabled={isUploading}
       />
     </View>

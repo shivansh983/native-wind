@@ -1,4 +1,4 @@
-import { uploadPdf } from '@/api/upload';
+import { uploadFile } from '@/api/upload';
 import * as DocumentPicker from 'expo-document-picker';
 import { Alert } from 'react-native';
 import { create } from 'zustand';
@@ -10,6 +10,7 @@ export interface FileItem {
   uri: string;
   date: string;
   status: 'Success' | 'Failed' | 'Shared';
+  mimeType?: string;
   serverUrl?: string; // backend path
 }
 
@@ -38,7 +39,7 @@ export const useAppStore = create<AppState>((set) => ({
 
   triggerUpload: async () => {
     const result = await DocumentPicker.getDocumentAsync({
-      // must match ALLOWED on the backend
+      // same list as the backend
       type: [
         'application/pdf',
         'application/msword',
@@ -57,7 +58,7 @@ export const useAppStore = create<AppState>((set) => ({
     let serverUrl: string | undefined;
 
     try {
-      const saved = await uploadPdf({
+      const saved = await uploadFile({
         uri: picked.uri,
         name: picked.name,
         mimeType: picked.mimeType,
@@ -78,6 +79,7 @@ export const useAppStore = create<AppState>((set) => ({
       size: formatSize(picked.size),
       uri: picked.uri,
       date: 'Just now',
+      mimeType: picked.mimeType,
       status,
       serverUrl,
     };

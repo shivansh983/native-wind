@@ -1,31 +1,86 @@
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Text, TextInput, View } from 'react-native';
 import { getApiUrl, getDefaultApiUrl, setApiUrl } from '../api/config';
 import CustomButton from '../component/button';
+import { useAppStore } from '../store/useStore';
 import { COLORS } from '../theme/colors';
+
+const clean = (value: string) => value.trim().replace(/\/+$/, '');
+
+// http://host:port
+const looksValid = (value: string) => /^https?:\/\/[^\s/]+/i.test(value);
 
 const ServerScreen = () => {
   const [url, setUrl] = useState(getApiUrl());
   const [busy, setBusy] = useState(false);
+  const router = useRouter();
+  const { then } = useLocalSearchParams<{ then?: string }>();
 
-  const save = async () => {
-    const saved = await setApiUrl(url);
-    setUrl(saved);
-    Alert.alert('Saved', `Now using ${saved}`);
-  };
-
-  // ping the server root
-  const test = async () => {
-    setBusy(true);
+  // ping it
+  const ping = async (value: string) => {
     try {
-      const res = await fetch(`${url.trim().replace(/\/+$/, '')}/`, {
+      const res = await fetch(`${value}/`, {
         signal: AbortSignal.timeout(8000),
       });
-      Alert.alert('Connected', `Server replied ${res.status}`);
+      return res.ok;
     } catch {
-      Alert.alert('No connection', 'Could not reach that address.');
-    } finally {
-      setBusy(false);
+      return false;
+    }
+  };
+
+  const test = async () => {
+    const value = clean(url);
+
+    if (!looksValid(value)) {
+      Alert.alert('Check the address', 'Example: http://192.168.1.50:5000');
+      return;
+    }
+
+    setBusy(true);
+    const ok = await ping(value);
+    setBusy(false);
+
+    Alert.alert(
+      ok ? 'Connected' : 'No answer',
+      ok
+        ? 'The server is reachable.'
+        : 'Nothing replied. Check the IP, that the container is running, and that both devices are on the same Wi-Fi.',
+    );
+  };
+
+  const save = async () => {
+    const value = clean(url);
+
+    if (!looksValid(value)) {
+      Alert.alert('Check the address', 'Example: http://192.168.1.50:5000');
+      return;
+    }
+
+    setBusy(true);
+    const ok = await ping(value);
+    await setApiUrl(value);
+    setUrl(value);
+    setBusy(false);
+
+    if (ok) {
+      Alert.alert('Connected', 'Saved.', [
+        {
+          text: 'OK',
+          onPress: () => {
+            router.back();
+            // carry on with the upload
+            if (then === 'upload') {
+              setTimeout(() => useAppStore.getState().triggerUpload(), 300);
+            }
+          },
+        },
+      ]);
+    } else {
+      Alert.alert(
+        'Saved, but no answer',
+        'The address is stored but nothing replied. Uploads will fail until the server is reachable.',
+      );
     }
   };
 
