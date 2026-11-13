@@ -1,95 +1,235 @@
-# Welcome to your Expo app 👋
+# NativeUpload
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A small React Native app for picking PDFs off your phone and uploading them to a
+local Node server. It keeps a running count of how uploads went and lists the
+files you have sent.
 
-## Get started
+Built with Expo Router, NativeWind and Zustand.
 
-1. Install dependencies
+---
 
-   ```bash
-   npm install
-   ```
+## What you need first
 
-2. Start the app
+- **Node 20+**
+- **Android Studio** (for the SDK and an emulator, if you want one)
+- **JDK 17 or newer** — Android Studio ships one at
+  `C:\Program Files\Android\Android Studio\jbr`, so you usually do not have to
+  install Java separately
+- A phone with USB debugging on, or an emulator
 
-   ```bash
-   npx expo start
-   ```
-(The application is build using pluggins and native-wind so expo-go wont work)
+This app uses native modules and config plugins, so **Expo Go will not run it**.
+You need a development build or an APK.
 
-3. Provide the Clerk key
+---
 
-```Create a .env file as the application need   Clerk_Key
+## Setup
 
-```
-
-4. Generate the native project
-
-```
-npx expo prebuild  --platform android
-(only rerun this if changed any pluggins)
-
-```
-
-
-5. build the app using EAS
-```
-  a. debug-build(JS server live by metro):
-   cd android
-   ./gradlew assembleDebug
-
-
-  b.release-build  (JS bundled)
-   cd android
-   ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a
-
-```
-
-6. install the apk on your device
-```
-   adb devices                                       # to check available devices
-
-   adb install -r android/app/build/outputs/apk/release/app-release.apk
-```
-
-
-
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+### 1. Install dependencies
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+### 2. Point the app at your backend
 
-### Other setup steps
+Create a `.env` file in the project root:
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```
+EXPO_PUBLIC_API_URL=http://192.168.1.50:5000
+```
 
-## Learn more
+The right value depends on where the app runs, because `localhost` on a phone
+means the phone itself, not your computer:
 
-To learn more about developing your project with Expo, look at the following resources:
+| Running on            | Use                        |
+| --------------------- | -------------------------- |
+| Web or iOS simulator  | `http://localhost:5000`    |
+| Android emulator      | `http://10.0.2.2:5000`     |
+| A real phone          | `http://<your-pc-ip>:5000` |
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Find your IP with `ipconfig` and take the IPv4 address of your Wi-Fi adapter.
+The phone and the computer have to be on the same network.
 
-## Join the community
+Two things worth knowing about this variable:
 
-Join our community of developers creating universal apps.
+- `EXPO_PUBLIC_*` values are **baked into the bundle when it builds**. Changing
+  `.env` means restarting Metro with `-c`, or rebuilding the APK. It is not read
+  at runtime.
+- There is a fallback IP hardcoded in `src/api/config.ts` for when `.env` is
+  missing. Change it to yours or delete it.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### 3. Start the backend
+
+The server lives in a separate repo, `node-for-auth`:
+
+```bash
+cd ../node-for-auth
+node server.js
+```
+
+It listens on port 5000 and exposes:
+
+| Method | Route          | Does                                  |
+| ------ | -------------- | ------------------------------------- |
+| `POST` | `/api/upload`  | takes one PDF in a `file` form field  |
+| `GET`  | `/api/upload`  | lists everything uploaded so far      |
+| `GET`  | `/uploads/...` | serves a stored PDF                   |
+
+PDFs only, 10 MB maximum. Anything else comes back as a 400.
+
+### 4. Run the app
+
+```bash
+npx expo start
+```
+
+Then open it in your development build. JS changes reload in a second or two,
+which is how you want to work day to day — building an APK for every change is
+the slow way round.
+
+---
+
+## Building an APK
+
+Do this when you want something installable that runs without Metro.
+
+### 1. Check `.env` before you start
+
+The API URL gets compiled in. Getting it wrong means building again, so look
+before you build.
+
+### 2. Point Gradle at a modern JDK
+
+```powershell
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
+```
+
+Only needed if your default `java` is older than 17. Check with `java -version`.
+
+### 3. Build
+
+```bash
+cd android
+./gradlew assembleRelease
+```
+
+Adding `-PreactNativeArchitectures=arm64-v8a` builds for modern phones only. The
+APK comes out roughly a third of the size and builds noticeably quicker, which
+is usually what you want while testing.
+
+For a debug APK that loads JS from Metro instead of bundling it:
+
+```bash
+./gradlew assembleDebug
+```
+
+### 4. Grab the file
+
+```
+android/app/build/outputs/apk/release/app-release.apk
+```
+
+**Check the timestamp.** A failed build leaves the previous APK sitting there,
+and installing a stale one is a confusing way to lose half an hour.
+
+### 5. Install it
+
+```bash
+adb devices                      # is the phone actually connected?
+adb install -r android/app/build/outputs/apk/release/app-release.apk
+```
+
+`-r` replaces the existing install and keeps its data. Copying the APK to the
+phone and tapping it works too.
+
+### How long it takes
+
+A first release build compiles native C++ for every dependency and can take
+hours. After that, a JS-only change is a few minutes because the native work is
+cached. Avoid `./gradlew clean` unless you have to — it throws that cache away.
+
+---
+
+## If you change `app.json`
+
+The `android/` folder is generated. Native config in `app.json` only reaches the
+app after:
+
+```bash
+npx expo prebuild --platform android
+```
+
+This overwrites hand edits inside `android/`, so put native settings in
+`app.json` and let prebuild generate them.
+
+---
+
+## Project layout
+
+```
+src/
+  api/
+    config.ts        single source for the API base URL
+    upload.ts        posts a PDF to the backend
+  app/
+    _layout.tsx      root stack
+    index.tsx        redirects into the tabs
+    (home)/
+      _layout.tsx    the bottom tab bar
+      index.tsx      dashboard: 4 stat boxes + recent files
+      files.tsx      full list, tap a row to open the PDF
+      contact.tsx
+      setting.tsx
+  component/
+    screen.tsx       page shell: safe area + header
+    header.tsx       title and the Upload button
+    button.tsx
+  store/
+    useStore.ts      Zustand store: files, stats, triggerUpload
+  theme/
+    colors.ts        colours for StyleSheet
+```
+
+### A note on colours
+
+There are two copies of the palette and they do not talk to each other:
+
+- `src/theme/colors.ts` for `StyleSheet` (`COLORS.surface`)
+- `tailwind.config.js` for NativeWind classes (`className="bg-surface"`)
+
+If you add a colour, **add it to both**. Miss one and that syntax silently
+renders nothing, which looks like a styling bug rather than a missing value.
+
+---
+
+## When things go wrong
+
+**Uploads fail with "Network request failed"**
+The phone cannot see your computer. Check the IP in `.env`, check both devices
+are on the same Wi-Fi, and check the server is running. Remember the APK has the
+URL compiled in — editing `.env` afterwards changes nothing.
+
+**Uploads fail on a release build but work in development**
+Android blocks plain HTTP in release builds. `usesCleartextTraffic` is already
+set in `app.json`; if you regenerate `android/`, make sure it survived.
+
+**"Unsupported FormDataPart implementation"**
+Expo's `fetch` does not accept the old `{ uri, name, type }` object that most RN
+tutorials show. Append a `File` from `expo-file-system` instead — see
+`src/api/upload.ts`.
+
+**Styling changes do nothing**
+Tailwind config changes need a cache clear: `npx expo start -c`.
+
+**Gradle refuses to start**
+Almost always an old JDK. Gradle 9 needs 17 or newer; set `JAVA_HOME` as above.
+
+---
+
+## What is not done yet
+
+- The file list lives in memory, so it empties when the app restarts. The
+  backend already has `GET /api/upload` to load it back.
+- Uploads have no timeout, so an unreachable server hangs for a while instead of
+  failing quickly.
+- Tapping a file opens it in the browser rather than inside the app.

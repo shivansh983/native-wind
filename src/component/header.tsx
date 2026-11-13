@@ -1,21 +1,33 @@
 import { Text, View } from 'react-native';
+import { useAppStore } from '../store/useStore';
 import CustomButton from './button';
 
+interface TopHeaderProps {
+  screenTitle: string;
+  onUpload?: () => void;
+}
 
-
-const TopHeader = ({screenTitle}:{screenTitle:string}) => {
+const TopHeader = ({ screenTitle, onUpload }: TopHeaderProps) => {
+  const isUploading = useAppStore((state) => state.isUploading);
 
   return (
-    <View className='bg-navy px-4 py-3 flex-row items-center justify-between'>
+    <View className="flex-row items-center justify-between bg-navy px-4 pb-4 pt-2">
       <View>
-      <Text className="text-xs font-bold uppercase text text-muted">NativeUpload</Text>
-        <Text className="text-xl font-bold text-white">
+        <Text className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+          NativeUpload
+        </Text>
+        <Text className="mt-0.5 text-2xl font-bold text-white">
           {screenTitle}
         </Text>
       </View>
-     <CustomButton title="Upload" onPress={() => console.log('Upload clicked')} />
+
+      <CustomButton
+        title={isUploading ? 'Uploading...' : 'Upload'}
+        onPress={onUpload}
+        disabled={isUploading}
+      />
     </View>
   );
 };
 
-export default TopHeader
+export default TopHeader;
