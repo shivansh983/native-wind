@@ -1,10 +1,10 @@
 import { File, Paths } from 'expo-file-system';
 import { Alert, FlatList, Pressable, Text, View } from 'react-native';
-import { API_URL } from '../../api/config';
+import { getApiUrl } from '../../api/config';
 import CustomScreen from '../../component/screen';
 import { FileItem, useAppStore } from '../../store/useStore';
 
-// open pdf
+// open file
 const openFile = async (item: FileItem) => {
   try {
     let file = new File(item.uri);
@@ -16,7 +16,7 @@ const openFile = async (item: FileItem) => {
         return;
       }
       file = await File.downloadFileAsync(
-        `${API_URL}${item.serverUrl}`,
+        `${getApiUrl()}${item.serverUrl}`,
         Paths.cache,
         { idempotent: true },
       );
@@ -25,7 +25,7 @@ const openFile = async (item: FileItem) => {
     const opts = { mimeType: 'application/pdf', title: item.name };
 
     if (!(await File.canPreview(file, opts))) {
-      Alert.alert('No PDF app', 'Install a PDF viewer to open this file.');
+      Alert.alert('Cannot open', 'No app installed for this file type.');
       return;
     }
 
@@ -54,7 +54,7 @@ const Files = () => {
           <View className="items-center rounded-2xl border border-border bg-surface p-8">
             <Text className="font-semibold text-main">No files yet</Text>
             <Text className="mt-1 text-xs text-muted">
-              Tap Upload to pick a PDF
+              Tap Upload to pick a file
             </Text>
           </View>
         }

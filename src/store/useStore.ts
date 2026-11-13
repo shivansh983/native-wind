@@ -27,7 +27,7 @@ interface AppState {
 
 // bytes -> "1.25 MB"
 const formatSize = (bytes?: number) => {
-  if (!bytes) return 'PDF';
+  if (!bytes) return 'File';
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 };
 
@@ -38,13 +38,19 @@ export const useAppStore = create<AppState>((set) => ({
 
   triggerUpload: async () => {
     const result = await DocumentPicker.getDocumentAsync({
-      type: 'application/pdf',
+      // must match ALLOWED on the backend
+      type: [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'text/plain',
+      ],
       copyToCacheDirectory: true,
     });
 
     if (result.canceled) return;
 
-    const pdf = result.assets[0];
+    const picked = result.assets[0];
     set({ isUploading: true });
 
     let status: FileItem['status'] = 'Success';
@@ -52,9 +58,9 @@ export const useAppStore = create<AppState>((set) => ({
 
     try {
       const saved = await uploadPdf({
-        uri: pdf.uri,
-        name: pdf.name,
-        mimeType: pdf.mimeType,
+        uri: picked.uri,
+        name: picked.name,
+        mimeType: picked.mimeType,
       });
       serverUrl = saved.file.url;
     } catch (err) {
@@ -68,9 +74,9 @@ export const useAppStore = create<AppState>((set) => ({
 
     const newFile: FileItem = {
       id: String(Date.now()),
-      name: pdf.name,
-      size: formatSize(pdf.size),
-      uri: pdf.uri,
+      name: picked.name,
+      size: formatSize(picked.size),
+      uri: picked.uri,
       date: 'Just now',
       status,
       serverUrl,

@@ -1,5 +1,5 @@
 import { File } from 'expo-file-system';
-import { API_URL } from './config';
+import { getApiUrl } from './config';
 
 interface PickedPdf {
   uri: string;
@@ -23,7 +23,7 @@ export const uploadPdf = async (pdf: PickedPdf): Promise<UploadResponse> => {
   // file object instead of uri
   form.append('file', new File(pdf.uri) as any);
 
-  const res = await fetch(`${API_URL}/api/upload`, {
+  const res = await fetch(`${getApiUrl()}/api/upload`, {
     method: 'POST',
     body: form,
   });
