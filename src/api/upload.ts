@@ -84,3 +84,7 @@ export const renameFile = async (id: number, name: string) => {
 
   return data.file;
 };
+
+// server hands back a pdf for office files
+export const previewUrl = (serverUrl: string) =>
+  `${getApiUrl()}/api/upload/preview/${serverUrl.split('/').pop()}`;

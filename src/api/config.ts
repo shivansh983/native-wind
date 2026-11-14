@@ -7,13 +7,10 @@ const DEFAULT_URL =
   process.env.EXPO_PUBLIC_API_URL ?? 'http://192.168.29.153:5000';
 
 let current = DEFAULT_URL;
-let isSet = false;
 
 const clean = (url: string) => url.trim().replace(/\/+$/, '');
 
 export const getApiUrl = () => current;
-
-export const hasApiUrl = () => isSet;
 
 export const getDefaultApiUrl = () => DEFAULT_URL;
 
@@ -21,10 +18,7 @@ export const getDefaultApiUrl = () => DEFAULT_URL;
 export const loadApiUrl = async () => {
   try {
     const saved = await SecureStore.getItemAsync(KEY);
-    if (saved) {
-      current = saved;
-      isSet = true;
-    }
+    if (saved) current = saved;
   } catch {
   }
   return current;
@@ -32,7 +26,6 @@ export const loadApiUrl = async () => {
 
 export const setApiUrl = async (url: string) => {
   current = clean(url);
-  isSet = true;
   try {
     await SecureStore.setItemAsync(KEY, current);
   } catch {

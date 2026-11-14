@@ -22,13 +22,32 @@ export interface FileItem {
   serverUrl: string;
 }
 
-export const isImage = (file: FileItem) =>
+// a FileItem fits, and so does a file handed to us by another app
+export interface FileLike {
+  name: string;
+  mimeType?: string;
+}
+
+export const isImage = (file: FileLike) =>
   file.mimeType?.startsWith('image/') === true ||
   /\.(jpe?g|png|webp|gif)$/i.test(file.name);
 
 // only pdf renders without converting
-export const isPdf = (file: FileItem) =>
+export const isPdf = (file: FileLike) =>
   file.mimeType === 'application/pdf' || /\.pdf$/i.test(file.name);
+
+// server turns these into a pdf
+export const isOffice = (file: FileLike) =>
+  /\.(docx?|xlsx?|pptx?)$/i.test(file.name) ||
+  file.mimeType === 'application/msword' ||
+  file.mimeType === 'application/vnd.ms-excel' ||
+  file.mimeType === 'application/vnd.ms-powerpoint' ||
+  file.mimeType?.startsWith('application/vnd.openxmlformats-officedocument.') ===
+    true;
+
+// anything else goes out to another app
+export const canRender = (file: FileLike) =>
+  isPdf(file) || isImage(file) || isOffice(file);
 
 // bytes -> "1.25 MB"
 const formatSize = (bytes?: number) => {

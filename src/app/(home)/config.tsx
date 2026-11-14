@@ -1,4 +1,3 @@
-import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Text, TextInput, View } from 'react-native';
 import { getApiUrl, getDefaultApiUrl, setApiUrl } from '../../api/config';
@@ -14,7 +13,6 @@ const looksValid = (value: string) => /^https?:\/\/[^\s/]+/i.test(value);
 
 const ConfigScreen = () => {
   const pickFile = useAppStore((state) => state.pickFile);
-  const { then } = useLocalSearchParams<{ then?: string }>();
 
   const [url, setUrl] = useState(getApiUrl());
   const [busy, setBusy] = useState(false);
@@ -73,17 +71,7 @@ const ConfigScreen = () => {
       return;
     }
 
-    Alert.alert('Connected', 'Saved.', [
-      {
-        text: 'OK',
-        // carry on with the upload
-        onPress: () => {
-          if (then === 'upload') {
-            setTimeout(pickFile, 300);
-          }
-        },
-      },
-    ]);
+    Alert.alert('Connected', 'Saved.');
   };
 
   return (
