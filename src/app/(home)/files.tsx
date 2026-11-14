@@ -1,4 +1,5 @@
 import { File, Paths } from 'expo-file-system';
+import { useRouter } from 'expo-router';
 import { Alert, FlatList, Pressable, Text, View } from 'react-native';
 import { getApiUrl } from '../../api/config';
 import CustomScreen from '../../component/screen';
@@ -39,6 +40,7 @@ const openFile = async (item: FileItem) => {
 };
 
 const Files = () => {
+  const router = useRouter();
   const { files, triggerUpload } = useAppStore();
 
   return (
@@ -60,7 +62,8 @@ const Files = () => {
         }
         renderItem={({ item }) => (
           <Pressable
-            onPress={() => openFile(item)}
+            onPress={() => router.push(`/reader?id=${item.id}`)}
+            onLongPress={() => openFile(item)}
             className="mb-2.5 flex-row items-center justify-between rounded-2xl border border-border bg-surface p-4 active:opacity-70"
           >
             <View className="flex-1 pr-3">

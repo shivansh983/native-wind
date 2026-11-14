@@ -26,6 +26,14 @@ interface AppState {
   triggerUpload: () => Promise<void>;
 }
 
+export const isImage = (file: FileItem) =>
+  file.mimeType?.startsWith('image/') === true ||
+  /\.(jpe?g|png|webp|gif)$/i.test(file.name);
+
+// only pdf renders without converting
+export const isPdf = (file: FileItem) =>
+  file.mimeType === 'application/pdf' || /\.pdf$/i.test(file.name);
+
 // bytes -> "1.25 MB"
 const formatSize = (bytes?: number) => {
   if (!bytes) return 'File';
@@ -44,6 +52,14 @@ export const useAppStore = create<AppState>((set) => ({
         'application/pdf',
         'application/msword',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+        'image/gif',
         'text/plain',
       ],
       copyToCacheDirectory: true,
