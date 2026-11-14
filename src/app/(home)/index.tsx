@@ -3,41 +3,38 @@ import { useAppStore } from '@/store/useStore'
 import { COLORS } from '@/theme/colors'
 import { FlatList, StyleSheet, Text, View } from 'react-native'
 
-const STATUS_COLORS = {
-  Success: '#16a34a',
-  Failed: '#dc2626',
-  Shared: '#d97706',
-}
-
 const HomeScreen = () => {
-  const { stats, files, triggerUpload } = useAppStore()
+  const { files, failed, isLoading, loadFiles, pickFile } = useAppStore()
+
+  // from the files table
+  const totalBytes = files.reduce((sum, file) => sum + file.bytes, 0)
+  const totalSize =
+    totalBytes < 1024 * 1024
+      ? `${(totalBytes / 1024).toFixed(0)} KB`
+      : `${(totalBytes / (1024 * 1024)).toFixed(1)} MB`
 
   return (
-    <CustomScreen title="Dashboard" onUpload={triggerUpload}>
+    <CustomScreen title="Dashboard" onUpload={pickFile}>
       <View style={styles.grid}>
         <View style={[styles.card, styles.box]}>
-          <Text style={styles.label}>Total Uploads</Text>
-          <Text style={styles.value}>{stats.uploaded}</Text>
+          <Text style={styles.label}>Files Stored</Text>
+          <Text style={styles.value}>{files.length}</Text>
         </View>
 
         <View style={[styles.card, styles.box]}>
-          <Text style={styles.label}>Success</Text>
-          <Text style={[styles.value, { color: STATUS_COLORS.Success }]}>
-            {stats.success}
-          </Text>
+          <Text style={styles.label}>Total Size</Text>
+          <Text style={styles.value}>{totalSize}</Text>
         </View>
 
         <View style={[styles.card, styles.box]}>
-          <Text style={styles.label}>Failed</Text>
-          <Text style={[styles.value, { color: STATUS_COLORS.Failed }]}>
-            {stats.failed}
-          </Text>
+          <Text style={styles.label}>Failed (this run)</Text>
+          <Text style={[styles.value, { color: '#dc2626' }]}>{failed}</Text>
         </View>
 
         <View style={[styles.card, styles.box]}>
-          <Text style={styles.label}>Shared</Text>
-          <Text style={[styles.value, { color: STATUS_COLORS.Shared }]}>
-            {stats.shared}
+          <Text style={styles.label}>Last Upload</Text>
+          <Text style={[styles.value, { fontSize: 13, marginTop: 8 }]}>
+            {files[0]?.date ?? '--'}
           </Text>
         </View>
       </View>
@@ -52,6 +49,8 @@ const HomeScreen = () => {
       <FlatList
         data={files}
         keyExtractor={(item) => item.id}
+        refreshing={isLoading}
+        onRefresh={loadFiles}
         ListEmptyComponent={
           <View style={[styles.card, { alignItems: 'center', paddingVertical: 32 }]}>
             <Text style={styles.label}>No files yet</Text>
@@ -67,15 +66,6 @@ const HomeScreen = () => {
                 {item.size} · {item.date}
               </Text>
             </View>
-
-            <Text
-              style={[
-                styles.label,
-                { fontWeight: 'bold', color: STATUS_COLORS[item.status] },
-              ]}
-            >
-              {item.status}
-            </Text>
           </View>
         )}
       />

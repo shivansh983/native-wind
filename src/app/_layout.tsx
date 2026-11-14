@@ -2,13 +2,17 @@ import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useEffect } from 'react';
 import { loadApiUrl } from '../api/config';
+import { UploadNameModal } from '../component/nameModal';
+import { useAppStore } from '../store/useStore';
 import '../global.css';
 
 const RootLayout = () => {
-  // load saved server
+  const loadFiles = useAppStore((state) => state.loadFiles);
+
+  // saved server, then the files table
   useEffect(() => {
-    loadApiUrl();
-  }, []);
+    loadApiUrl().then(() => loadFiles());
+  }, [loadFiles]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -18,6 +22,8 @@ const RootLayout = () => {
           options={{ headerShown: true, title: 'File' }}
         />
       </Stack>
+
+      <UploadNameModal />
     </GestureHandlerRootView>
   );
 };

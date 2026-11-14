@@ -1,29 +1,25 @@
-import { uploadFile } from '@/api/upload';
+import {
+  PickedFile,
+  ServerFile,
+  fetchFiles,
+  renameFile,
+  uploadFile,
+} from '@/api/upload';
 import * as DocumentPicker from 'expo-document-picker';
 import { Alert } from 'react-native';
 import { create } from 'zustand';
 
 export interface FileItem {
   id: string;
+  serverId: number;
   name: string;
   size: string;
-  uri: string;
+  bytes: number;
   date: string;
-  status: 'Success' | 'Failed' | 'Shared';
+  status: 'Success' | 'Failed';
   mimeType?: string;
-  serverUrl?: string; // backend path
-}
-
-interface AppState {
-  isUploading: boolean;
-  stats: {
-    uploaded: number;
-    success: number;
-    failed: number;
-    shared: number;
-  };
-  files: FileItem[];
-  triggerUpload: () => Promise<void>;
+  uri: string;
+  serverUrl: string;
 }
 
 export const isImage = (file: FileItem) =>
@@ -37,15 +33,86 @@ export const isPdf = (file: FileItem) =>
 // bytes -> "1.25 MB"
 const formatSize = (bytes?: number) => {
   if (!bytes) return 'File';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 };
 
-export const useAppStore = create<AppState>((set) => ({
-  isUploading: false,
-  stats: { uploaded: 0, success: 0, failed: 0, shared: 0 },
-  files: [],
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-  triggerUpload: async () => {
+// -> "14 Nov 2026, 4:52 pm"
+const formatDate = (iso?: string) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+
+  const hour = d.getHours();
+  const minute = String(d.getMinutes()).padStart(2, '0');
+  const suffix = hour < 12 ? 'am' : 'pm';
+  const shown = hour % 12 === 0 ? 12 : hour % 12;
+
+  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}, ${shown}:${minute} ${suffix}`;
+};
+
+// server row -> list row
+const toItem = (row: ServerFile, localUri = ''): FileItem => ({
+  id: String(row.id),
+  serverId: row.id,
+  name: row.name,
+  size: formatSize(row.size),
+  bytes: row.size,
+  date: formatDate(row.uploadedAt),
+  status: 'Success',
+  mimeType: row.mimeType,
+  uri: localUri,
+  serverUrl: row.url,
+});
+
+interface AppState {
+  files: FileItem[];
+  isUploading: boolean;
+  isLoading: boolean;
+  failed: number;
+  // picked, waiting for a name
+  pending: PickedFile | null;
+  loadFiles: () => Promise<void>;
+  pickFile: () => Promise<void>;
+  confirmUpload: (name: string) => Promise<void>;
+  cancelUpload: () => void;
+  renameExisting: (id: number, name: string) => Promise<void>;
+}
+
+export const useAppStore = create<AppState>((set, get) => ({
+  files: [],
+  isUploading: false,
+  isLoading: false,
+  failed: 0,
+  pending: null,
+
+  // read the files table
+  loadFiles: async () => {
+    set({ isLoading: true });
+    try {
+      const rows = await fetchFiles();
+      const known = get().files;
+
+      set({
+        // keep the local copy, the reader is quicker with it
+        files: rows.map((row) =>
+          toItem(row, known.find((f) => f.serverId === row.id)?.uri ?? ''),
+        ),
+      });
+    } catch (err) {
+      Alert.alert(
+        'Could not load files',
+        err instanceof Error ? err.message : 'Something went wrong',
+      );
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  pickFile: async () => {
     const result = await DocumentPicker.getDocumentAsync({
       // same list as the backend
       type: [
@@ -68,47 +135,58 @@ export const useAppStore = create<AppState>((set) => ({
     if (result.canceled) return;
 
     const picked = result.assets[0];
-    set({ isUploading: true });
 
-    let status: FileItem['status'] = 'Success';
-    let serverUrl: string | undefined;
-
-    try {
-      const saved = await uploadFile({
+    // name it first
+    set({
+      pending: {
         uri: picked.uri,
         name: picked.name,
+        size: picked.size,
         mimeType: picked.mimeType,
-      });
-      serverUrl = saved.file.url;
+      },
+    });
+  },
+
+  cancelUpload: () => set({ pending: null }),
+
+  confirmUpload: async (name) => {
+    const picked = get().pending;
+    if (!picked) return;
+
+    set({ pending: null, isUploading: true });
+
+    try {
+      const saved = await uploadFile(picked, name.trim() || picked.name);
+
+      set((state) => ({
+        files: [toItem(saved, picked.uri), ...state.files],
+      }));
     } catch (err) {
-      status = 'Failed';
       // why it failed
       Alert.alert(
         'Upload failed',
         err instanceof Error ? err.message : 'Could not reach the server',
       );
+      set((state) => ({ failed: state.failed + 1 }));
+    } finally {
+      set({ isUploading: false });
     }
+  },
 
-    const newFile: FileItem = {
-      id: String(Date.now()),
-      name: picked.name,
-      size: formatSize(picked.size),
-      uri: picked.uri,
-      date: 'Just now',
-      mimeType: picked.mimeType,
-      status,
-      serverUrl,
-    };
+  renameExisting: async (id, name) => {
+    try {
+      const saved = await renameFile(id, name);
 
-    set((state) => ({
-      isUploading: false,
-      files: [newFile, ...state.files],
-      stats: {
-        ...state.stats,
-        uploaded: state.stats.uploaded + 1,
-        success: state.stats.success + (status === 'Success' ? 1 : 0),
-        failed: state.stats.failed + (status === 'Failed' ? 1 : 0),
-      },
-    }));
+      set((state) => ({
+        files: state.files.map((f) =>
+          f.serverId === id ? toItem(saved, f.uri) : f,
+        ),
+      }));
+    } catch (err) {
+      Alert.alert(
+        'Rename failed',
+        err instanceof Error ? err.message : 'Something went wrong',
+      );
+    }
   },
 }));

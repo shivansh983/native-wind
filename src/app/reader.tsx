@@ -26,17 +26,13 @@ const ReaderScreen = () => {
         // pdf and images open as they are
         const asIs = isPdf(item) || isImage(item);
 
-        if (asIs) {
+        // already on the phone
+        if (asIs && item.uri) {
           const local = new File(item.uri);
           if (local.exists) {
             setPath(local.uri);
             return;
           }
-        }
-
-        if (!item.serverUrl) {
-          setError('This file is not on the device');
-          return;
         }
 
         // office files take a moment on the server

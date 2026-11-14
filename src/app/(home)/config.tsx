@@ -13,7 +13,7 @@ const clean = (value: string) => value.trim().replace(/\/+$/, '');
 const looksValid = (value: string) => /^https?:\/\/[^\s/]+/i.test(value);
 
 const ConfigScreen = () => {
-  const triggerUpload = useAppStore((state) => state.triggerUpload);
+  const pickFile = useAppStore((state) => state.pickFile);
   const { then } = useLocalSearchParams<{ then?: string }>();
 
   const [url, setUrl] = useState(getApiUrl());
@@ -79,7 +79,7 @@ const ConfigScreen = () => {
         // carry on with the upload
         onPress: () => {
           if (then === 'upload') {
-            setTimeout(triggerUpload, 300);
+            setTimeout(pickFile, 300);
           }
         },
       },
@@ -87,7 +87,7 @@ const ConfigScreen = () => {
   };
 
   return (
-    <CustomScreen title="Config" onUpload={triggerUpload}>
+    <CustomScreen title="Config" onUpload={pickFile}>
       <View className="rounded-2xl border border-border bg-surface p-4">
         <Text className="font-semibold text-main">Server address</Text>
         <Text className="mb-3 mt-1 text-xs text-muted">

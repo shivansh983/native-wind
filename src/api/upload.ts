@@ -1,46 +1,43 @@
 import { File } from 'expo-file-system';
 import { getApiUrl } from './config';
 
-interface PickedFile {
+export interface PickedFile {
   uri: string;
   name: string;
+  size?: number;
   mimeType?: string;
 }
 
-interface UploadResponse {
-  message: string;
-  file: {
-    name: string;
-    savedAs: string;
-    size: number;
-    url: string;
-  };
+// one row of the files table
+export interface ServerFile {
+  id: number;
+  name: string;
+  originalName: string;
+  savedAs: string;
+  mimeType?: string;
+  size: number;
+  uploadedAt: string;
+  renamedAt: string;
+  url: string;
 }
 
-export const uploadFile = async (pdf: PickedFile): Promise<UploadResponse> => {
-  const form = new FormData();
-
-  // file object, not uri
-  form.append('file', new File(pdf.uri) as any);
-
-  const url = getApiUrl();
+// wrong ip, server down, or an api error
+const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
+  const base = getApiUrl();
   let res: Response;
 
-  // wrong ip or server down
   try {
-    res = await fetch(`${url}/api/upload`, {
-      method: 'POST',
-      body: form,
+    res = await fetch(`${base}${path}`, {
       signal: AbortSignal.timeout(20000),
+      ...init,
     });
   } catch (err) {
     if (err instanceof Error && err.name === 'TimeoutError') {
-      throw new Error(`${url} did not answer in time. Is the server running?`);
+      throw new Error(`${base} did not answer in time. Is the server running?`);
     }
-    throw new Error(`Cannot reach ${url}. Check the IP under Server.`);
+    throw new Error(`Cannot reach ${base}. Check the IP under Config.`);
   }
 
-  // server said no
   if (!res.ok) {
     const reason = await res
       .json()
@@ -50,4 +47,40 @@ export const uploadFile = async (pdf: PickedFile): Promise<UploadResponse> => {
   }
 
   return res.json();
+};
+
+// POST /api/upload
+export const uploadFile = async (picked: PickedFile, name: string) => {
+  const form = new FormData();
+
+  form.append('name', name);
+  // file object, not uri
+  form.append('file', new File(picked.uri) as any);
+
+  const data = await request<{ message: string; file: ServerFile }>(
+    '/api/upload',
+    { method: 'POST', body: form },
+  );
+
+  return data.file;
+};
+
+// GET /api/upload
+export const fetchFiles = async () => {
+  const data = await request<{ files: ServerFile[] }>('/api/upload');
+  return data.files;
+};
+
+// PATCH /api/upload/:id
+export const renameFile = async (id: number, name: string) => {
+  const data = await request<{ message: string; file: ServerFile }>(
+    `/api/upload/${id}`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    },
+  );
+
+  return data.file;
 };
