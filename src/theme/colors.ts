@@ -7,5 +7,6 @@ export const COLORS = {
   textMain: '#0f172a',
   textMuted: '#64748b',
   textMutedLight: '#94a3b8',
+  danger: '#dc2626',
   white: '#ffffff',
 } as const;

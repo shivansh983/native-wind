@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, FlatList, Pressable, Text, View } from 'react-native';
 import { getApiUrl } from '../../api/config';
+import ActionMenu from '../../component/actionMenu';
 import NameModal from '../../component/nameModal';
 import CustomScreen from '../../component/screen';
 import { FileItem, useAppStore } from '../../store/useStore';
@@ -39,11 +40,29 @@ const openFile = async (item: FileItem) => {
 
 const Files = () => {
   const router = useRouter();
-  const { files, isLoading, loadFiles, pickFile, renameExisting } =
+  const { files, isLoading, loadFiles, pickFile, renameExisting, removeFile } =
     useAppStore();
 
+  // the row whose 3-dots menu is open
+  const [menuFor, setMenuFor] = useState<FileItem | null>(null);
   // the row being renamed
   const [editing, setEditing] = useState<FileItem | null>(null);
+
+  // this wipes the server copy too, so ask first
+  const confirmDelete = (item: FileItem) => {
+    Alert.alert(
+      'Delete this file?',
+      `"${item.name}" is removed from the database and the server disk. This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => removeFile(item.serverId),
+        },
+      ],
+    );
+  };
 
   return (
     <CustomScreen title="Files" onUpload={pickFile}>
@@ -65,30 +84,62 @@ const Files = () => {
           </View>
         }
         renderItem={({ item }) => (
-          <Pressable
-            onPress={() => router.push(`/reader?id=${item.id}`)}
-            onLongPress={() => openFile(item)}
-            className="mb-2.5 rounded-2xl border border-border bg-surface p-4 active:opacity-70"
-          >
-            <Text className="font-semibold text-main" numberOfLines={1}>
-              {item.name}
-            </Text>
-
-            <View className="mt-1 flex-row items-center justify-between">
-              <Text className="text-xs text-muted">
-                {item.size} · {item.date}
+          <View className="mb-2.5 flex-row items-center rounded-2xl border border-border bg-surface">
+            <Pressable
+              onPress={() => router.push(`/reader?id=${item.id}`)}
+              className="flex-1 p-4 active:opacity-70"
+            >
+              <Text className="font-semibold text-main" numberOfLines={1}>
+                {item.name}
               </Text>
 
-              <Pressable
-                hitSlop={8}
-                onPress={() => setEditing(item)}
-                className="active:opacity-60"
-              >
-                <Text className="text-xs font-bold text-primary">Rename</Text>
-              </Pressable>
-            </View>
-          </Pressable>
+              <Text className="mt-1 text-xs text-muted">
+                {item.size} · {item.date}
+              </Text>
+            </Pressable>
+
+            <Pressable
+              hitSlop={8}
+              onPress={() => setMenuFor(item)}
+              className="px-4 py-5 active:opacity-50"
+            >
+              <Text className="text-lg leading-5 text-muted">⋮</Text>
+            </Pressable>
+          </View>
         )}
+      />
+
+      <ActionMenu
+        visible={menuFor !== null}
+        title={menuFor?.name}
+        onClose={() => setMenuFor(null)}
+        actions={[
+          {
+            label: 'Rename',
+            onPress: () => {
+              const row = menuFor;
+              setMenuFor(null);
+              setEditing(row);
+            },
+          },
+          {
+            label: 'Open in another app',
+            onPress: () => {
+              const row = menuFor;
+              setMenuFor(null);
+              if (row) openFile(row);
+            },
+          },
+          {
+            label: 'Delete',
+            destructive: true,
+            onPress: () => {
+              const row = menuFor;
+              setMenuFor(null);
+              if (row) confirmDelete(row);
+            },
+          },
+        ]}
       />
 
       <NameModal

@@ -85,6 +85,16 @@ export const renameFile = async (id: number, name: string) => {
   return data.file;
 };
 
+// DELETE /api/upload/:id
+export const deleteFile = async (id: number) => {
+  const data = await request<{ message: string; id: number }>(
+    `/api/upload/${id}`,
+    { method: 'DELETE' },
+  );
+
+  return data.id;
+};
+
 // server hands back a pdf for office files
 export const previewUrl = (serverUrl: string) =>
   `${getApiUrl()}/api/upload/preview/${serverUrl.split('/').pop()}`;

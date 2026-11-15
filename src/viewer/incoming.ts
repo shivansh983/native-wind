@@ -27,7 +27,7 @@ const nameFrom = (uri: string, mimeType: string) => {
   return guess;
 };
 
-// the grant on an incoming uri dies with the task, so copy it first
+// an incoming uri dies with the task, so copy it first
 export const resolveIncomingFile = async (
   uri: string,
 ): Promise<IncomingFile> => {

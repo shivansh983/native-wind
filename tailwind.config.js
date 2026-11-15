@@ -13,6 +13,7 @@ module.exports = {
         border: "#e2e8f0",
         main: "#0f172a",
         muted: "#64748b",
+        danger: "#dc2626",
         "muted-light": "#94a3b8",
       },
     },

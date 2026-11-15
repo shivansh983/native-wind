@@ -2,7 +2,7 @@ import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
 
-// our own deep links land here too. only a file uri came from the chooser.
+// deep links land here too, only file uris come from the chooser
 const isFileUri = (url: string) =>
   url.startsWith('content://') || url.startsWith('file://');
 
@@ -10,7 +10,7 @@ export const useIncomingFile = () => {
   const router = useRouter();
   const url = Linking.useURL();
 
-  // singleTask replays the url, so guard against a double push
+  // the url replays, so don't push it twice
   const handled = useRef<string | null>(null);
 
   useEffect(() => {

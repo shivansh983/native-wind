@@ -28,20 +28,23 @@ const HomeScreen = () => {
 
         <View style={[styles.card, styles.box]}>
           <Text style={styles.label}>Failed (this run)</Text>
-          <Text style={[styles.value, { color: '#dc2626' }]}>{failed}</Text>
+          <Text style={[styles.value, { color: COLORS.danger }]}>{failed}</Text>
         </View>
 
         <View style={[styles.card, styles.box]}>
           <Text style={styles.label}>Last Upload</Text>
-          <Text style={[styles.value, { fontSize: 13, marginTop: 8 }]}>
-            {files[0]?.date ?? '--'}
+          <Text
+            style={[styles.value, { fontSize: 13, marginTop: 8 }]}
+            numberOfLines={1}
+          >
+            {files[0]?.name ?? '--'}
+          </Text>
+          <Text style={[styles.label, { marginTop: 2 }]} numberOfLines={1}>
+            {files[0]?.date ?? ''}
           </Text>
         </View>
       </View>
 
-      {
-        // files
-      }
       <Text style={[styles.title, { fontSize: 16, marginVertical: 14 }]}>
         Uploaded Files
       </Text>

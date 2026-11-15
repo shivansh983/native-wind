@@ -3,6 +3,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { getApiUrl } from '../api/config';
+import { previewUrl } from '../api/upload';
 import Reader from '../component/reader';
 import { isImage, isPdf, useAppStore } from '../store/useStore';
 import { COLORS } from '../theme/colors';
@@ -39,10 +40,9 @@ const ReaderScreen = () => {
         setStatus(asIs ? 'Downloading...' : 'Converting on the server...');
 
         // office files come back as pdf from /preview
-        const saved = item.serverUrl.split('/').pop();
         const url = asIs
           ? `${getApiUrl()}${item.serverUrl}`
-          : `${getApiUrl()}/api/upload/preview/${saved}`;
+          : previewUrl(item.serverUrl);
 
         const file = await File.downloadFileAsync(url, Paths.cache, {
           idempotent: true,

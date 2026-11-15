@@ -41,5 +41,12 @@ example
 # generated native folders
 /ios
 /android
+
+# native build output, in case one lands outside /android
+*.apk
+*.aab
+.cxx/
+.gradle/
+
 .env
 !.env.example

@@ -21,9 +21,7 @@ const TopHeader = ({ screenTitle, onUpload }: TopHeaderProps) => {
         </Text>
       </View>
 
-      {
-        // straight to the picker, errors come from the upload itself
-      }
+      {/* the upload itself reports errors */}
       <CustomButton
         title={isUploading ? 'Uploading...' : 'Upload'}
         onPress={() => onUpload?.()}

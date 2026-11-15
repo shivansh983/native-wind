@@ -14,7 +14,7 @@ interface NameModalProps {
   onConfirm: (name: string) => void;
 }
 
-// asks for a file name
+// name box
 const NameModal = ({
   visible,
   title,
@@ -26,7 +26,7 @@ const NameModal = ({
 }: NameModalProps) => {
   const [name, setName] = useState(initial);
 
-  // refill when a new file is picked
+  // refill on a new file
   useEffect(() => {
     if (visible) setName(initial);
   }, [visible, initial]);
@@ -73,7 +73,7 @@ const NameModal = ({
 
 export default NameModal;
 
-// shows after a file is picked
+// opens after picking a file
 export const UploadNameModal = () => {
   const pending = useAppStore((state) => state.pending);
   const confirmUpload = useAppStore((state) => state.confirmUpload);

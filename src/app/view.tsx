@@ -12,8 +12,7 @@ import {
   resolveIncomingFile,
 } from '../viewer/incoming';
 
-// where a file lands when someone picks Canny Viewer from the Open with
-// chooser. it belongs to another app, so it never touches the files table.
+// a file from the Open with chooser, so it stays out of the table
 const ViewScreen = () => {
   const { uri } = useLocalSearchParams<{ uri: string }>();
 

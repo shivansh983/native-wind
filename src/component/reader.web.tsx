@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { COLORS } from '../theme/colors';
 
-// the native pdf view does not run on web
+// no native pdf view on web
 const Reader = ({ path, image }: { path: string; image?: boolean }) => {
   return (
     <View style={styles.box}>

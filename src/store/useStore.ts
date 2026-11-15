@@ -1,6 +1,7 @@
 import {
   PickedFile,
   ServerFile,
+  deleteFile,
   fetchFiles,
   renameFile,
   uploadFile,
@@ -22,7 +23,7 @@ export interface FileItem {
   serverUrl: string;
 }
 
-// a FileItem fits, and so does a file handed to us by another app
+// a row, or a file from another app
 export interface FileLike {
   name: string;
   mimeType?: string;
@@ -99,6 +100,7 @@ interface AppState {
   confirmUpload: (name: string) => Promise<void>;
   cancelUpload: () => void;
   renameExisting: (id: number, name: string) => Promise<void>;
+  removeFile: (id: number) => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -116,7 +118,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       const known = get().files;
 
       set({
-        // keep the local copy, the reader is quicker with it
+        // local copy, the reader is quicker with it
         files: rows.map((row) =>
           toItem(row, known.find((f) => f.serverId === row.id)?.uri ?? ''),
         ),
@@ -204,6 +206,22 @@ export const useAppStore = create<AppState>((set, get) => ({
     } catch (err) {
       Alert.alert(
         'Rename failed',
+        err instanceof Error ? err.message : 'Something went wrong',
+      );
+    }
+  },
+
+  removeFile: async (id) => {
+    // drop the row now, put it back if the server says no
+    const previous = get().files;
+    set({ files: previous.filter((f) => f.serverId !== id) });
+
+    try {
+      await deleteFile(id);
+    } catch (err) {
+      set({ files: previous });
+      Alert.alert(
+        'Delete failed',
         err instanceof Error ? err.message : 'Something went wrong',
       );
     }
