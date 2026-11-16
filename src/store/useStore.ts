@@ -123,11 +123,9 @@ export const useAppStore = create<AppState>((set, get) => ({
           toItem(row, known.find((f) => f.serverId === row.id)?.uri ?? ''),
         ),
       });
-    } catch (err) {
-      Alert.alert(
-        'Could not load files',
-        err instanceof Error ? err.message : 'Something went wrong',
-      );
+    } catch {
+      // server may be down on start, say nothing until they upload
+      set({ files: [] });
     } finally {
       set({ isLoading: false });
     }
@@ -186,7 +184,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       // why it failed
       Alert.alert(
         'Upload failed',
-        err instanceof Error ? err.message : 'Could not reach the server',
+        err instanceof Error
+          ? err.message
+          : 'Server not reachable. Check your network or IP.',
       );
       set((state) => ({ failed: state.failed + 1 }));
     } finally {

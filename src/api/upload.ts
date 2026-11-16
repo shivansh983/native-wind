@@ -31,11 +31,8 @@ const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
       signal: AbortSignal.timeout(20000),
       ...init,
     });
-  } catch (err) {
-    if (err instanceof Error && err.name === 'TimeoutError') {
-      throw new Error(`${base} did not answer in time. Is the server running?`);
-    }
-    throw new Error(`Cannot reach ${base}. Check the IP under Config.`);
+  } catch {
+    throw new Error('Server not reachable. Check your network or IP.');
   }
 
   if (!res.ok) {
